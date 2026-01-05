@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chunking Strategies for RAG Applications</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Chunking Strategies for RAG Applications</h1>
+
+    <p>
+        Chunking is simply the act of splitting larger documents into smaller units (“chunks”). 
+        Each chunk can be individually indexed, embedded, and retrieved.
+    </p>
+
+    <p>
+        Because RAG pipelines often rely on retrieval from vector databases and large language models (LLMs) 
+        with limited context windows, smart chunking can make all the difference in delivering relevant, 
+        context-rich answers.
+    </p>
+
+    <h2>Why Chunking Matters</h2>
+    <ul>
+        <li><strong>Context Window Constraints:</strong> Well-sized chunks ensure limits are not exceeded.</li>
+        <li><strong>Improved Retrieval Efficiency:</strong> Smaller chunks improve recall and speed.</li>
+        <li><strong>Computational Optimization:</strong> Reduces unnecessary processing.</li>
+        <li><strong>Enhanced Relevance:</strong> Preserves semantic meaning for better answers.</li>
+    </ul>
+
+    <h2>Role of Chunking in the RAG Pipeline</h2>
+
+    <div class="pipeline">
+        Document Ingestion → Preprocessing → <strong>Chunking</strong> → Embedding → Vector Storage → Retrieval → Generation
+    </div>
+
+    <p>
+        Chunking acts as the critical bridge between raw documents and meaningful vector representations.
+    </p>
+
+    <h2>Overview of Chunking Strategies</h2>
+
+    <!-- Fixed Size Chunking -->
+    <section>
+        <h3>1. Fixed-Size Chunking</h3>
+
+        <h4>Definition</h4>
+        <p>
+            This is the simplest approach, segmenting text into equally sized pieces (using character, token, or word counts). 
+            Often, an overlap is introduced to maintain continuity of ideas.
+        </p>
+
+        <h4>Example Usage</h4>
+        <pre><code>from langchain_text_splitters import CharacterTextSplitter
+
+document = """
+LangChain is a framework for developing applications powered by language models.
+It enables chaining LLMs with external tools.
+Chunking is a critical step in RAG systems.
+"""
+
+text_splitter = CharacterTextSplitter(
+    chunk_size=15,
+    chunk_overlap=0,
+    separator=""
+)
+
+texts = text_splitter.split_text(document)
+
+for i, chunk in enumerate(texts):
+    print(f"Chunk {i+1}: '{chunk}'")</code></pre>
+
+        <h4>Library Used</h4>
+        <p>LangChain – <code>CharacterTextSplitter</code></p>
+
+        <h4>Example Output</h4>
+        <pre><code>Chunk 1: 'LangChain is a'
+Chunk 2: ' framework for '
+Chunk 3: 'developing appl'
+...</code></pre>
+
+        <h4>Drawbacks</h4>
+        <ul>
+            <li>May cut off sentences or paragraphs abruptly.</li>
+            <li>Ignores natural semantic breaks.</li>
+            <li>Relevant information can end up scattered across chunks.</li>
+        </ul>
+    </section>
+
+    <!-- Semantic Chunking -->
+    <section>
+        <h3>2. Semantic Chunking</h3>
+
+        <h4>Definition</h4>
+        <p>
+            Instead of arbitrarily slicing text by length, semantic chunking splits documents at logical boundaries 
+            (e.g., sentences, paragraphs, or sections). Often, consecutive segments that are highly similar may be merged, 
+            providing coherent text blocks.
+        </p>
+
+        <h4>Example Usage</h4>
+        <pre><code>from langchain_experimental.text_splitter import SemanticChunker
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_core.documents import Document
+from dotenv import load_dotenv
+
+load_dotenv()
+
+doc_text = """
+LangChain is a framework for developing applications powered by language models.
+It enables chaining LLMs with external tools.
+Chunking is a critical step in RAG systems.
+"""
+
+documents = [Document(page_content=doc_text)]
+
+embeddings_model = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
+)
+
+semantic_chunker = SemanticChunker(
+    embeddings_model,
+    breakpoint_threshold_type="percentile",
+    breakpoint_threshold_amount=90
+)
+
+semantic_docs = semantic_chunker.create_documents(
+    [doc.page_content for doc in documents]
+)
+
+print(f"Total semantic chunks: {len(semantic_docs)}")
+
+for i, doc in enumerate(semantic_docs):
+    print(f"--- Chunk {i+1} ---")
+    print(doc.page_content)</code></pre>
+
+        <h4>Library Used</h4>
+        <p>LangChain Experimental + HuggingFace Embeddings</p>
+
+        <h4>Example Output</h4>
+        <pre><code>Total semantic chunks: 2
+
+Chunk 1:
+LangChain is a framework for developing applications powered by language models.
+It enables chaining LLMs with external tools.
+
+Chunk 2:
+Chunking is a critical step in RAG systems.</code></pre>
+
+        <h4>Drawbacks</h4>
+        <ul>
+            <li>More complex to implement.</li>
+            <li>Yields variable chunk sizes.</li>
+            <li>Slightly higher computational requirements.</li>
+        </ul>
+    </section>
+
+    <!-- Recursive Chunking -->
+    <section>
+        <h3>3. Recursive Chunking</h3>
+
+        <h4>Definition</h4>
+        <p>
+            Recursive chunking relies on a hierarchy of separators. The algorithm attempts to split on high-level 
+            separators first, then moves to increasingly finer separators if chunks remain too large.
+        </p>
+
+        <h4>Example Usage</h4>
+        <pre><code>from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=35,
+    chunk_overlap=0
+)
+
+document = """
+LangChain is a framework for developing applications powered by language models.
+It enables chaining LLMs with external tools.
+Chunking is a critical step in RAG systems.
+"""
+
+chunks = text_splitter.split_text(document)
+
+for i, chunk in enumerate(chunks):
+    print(f"Chunk {i+1}: {chunk}")</code></pre>
+
+        <h4>Library Used</h4>
+        <p>LangChain – <code>RecursiveCharacterTextSplitter</code></p>
+
+        <h4>Example Output</h4>
+        <pre><code>Chunk 1: LangChain is a framework for 
+Chunk 2: developing applications powered by 
+Chunk 3: language models. 
+Chunk 4: It enables chaining LLMs with 
+Chunk 5: external tools. 
+Chunk 6: Chunking is a critical step in RAG 
+Chunk 7: systems. </code></pre>
+    </section>
+
+    <!-- Document Based Chunking -->
+    <section>
+        <h3>4. Document-Based Chunking</h3>
+
+        <h4>Definition</h4>
+        <p>
+            In this chunking method, we split a document based on its inherent structure. This approach considers 
+            the flow and structure of content but may not be as effective for documents lacking clear structure.
+        </p>
+
+        <p><strong>Document with Markdown:</strong> Langchain provides MarkdownTextSplitter class to split document that consist markdown as way of separator.</p>
+        <p><strong>Document with Python/JS:</strong> Langchain provides PythonCodeTextSplitter to split the python program based on class, function etc. </p>
+
+        <pre><code>from langchain_text_splitters import PythonCodeTextSplitter
+
+python_code = """
+import math
+
+class Calculator:
+    def add(self, a, b):
+        return a + b
+
+    def sqrt(self, x):
+        return math.sqrt(x)
+
+def divide(x, y):
+    if y == 0:
+        raise ValueError("Cannot divide by zero")
+    return x / y
+"""
+
+splitter = PythonCodeTextSplitter(
+    chunk_size=200,
+    chunk_overlap=0
+)
+
+chunks = splitter.split_text(python_code)
+
+for i, chunk in enumerate(chunks):
+    print(f"--- Chunk {i+1} ---")
+    print(chunk)</code></pre>
+    <h4>Example Output</h4>
+        <pre class="output"><code>--- Chunk 1 ---
+import math
+--- Chunk 2 ---
+class Calculator:
+    def add(self, a, b):
+        return a + b
+
+    def sqrt(self, x):
+        return math.sqrt(x)
+--- Chunk 3 ---
+def divide(x, y):
+    if y == 0:
+        raise ValueError("Cannot divide by zero")
+    return x / y
+                </code></pre>
+                <p>
+                        <strong>Document with tables:</strong> When dealing with tables, splitting based on levels 1 and 2 might lose the tabular relationship between rows and columns. To preserve this relationship, format the table content in a way that the language model can understand (e.g., using &lt;table&gt; tags in HTML, CSV format separated by ';', etc.). During semantic search, matching on embeddings directly from the table can be challenging. Developers often summarize the table after extraction, generate an embedding of that summary, and use it for matching.
+                </p>
+        <h4>Example Usage</h4>
+        <pre><code>import pdfplumber 
+
+import pandas as pd 
+
+  
+
+def extract_tables_pdfplumber(pdf_path): 
+
+    all_tables = [] 
+
+    with pdfplumber.open(pdf_path) as pdf: 
+
+        for page in pdf.pages: 
+
+            # extract_tables() returns a list of tables detected on the page 
+
+            tables = page.extract_tables() 
+
+            for table in tables: 
+
+                # Convert the table (list of lists) to a Pandas DataFrame 
+
+                df = pd.DataFrame(table[1:], columns=table[0]) if table and len(table) > 1 else pd.DataFrame(table) 
+
+                all_tables.append(df) 
+
+    return all_tables 
+
+  
+
+pdf_file = "input_pdfs\\somatosensory.pdf" 
+
+extracted_dataframes = extract_tables_pdfplumber(pdf_file) 
+
+for i, df in enumerate(extracted_dataframes): 
+
+    print(f"--- Table {i+1} ---") 
+
+    print(df.head())</code></pre>
+<h4>Example Output</h4>
+        <pre><code>--- Table 1 --- ... Slowly adapting 0 Surface receptor /\nsmall receptive\nfield ... Merkel’s receptor: Used for spa-\ntial details... 1 Deep receptor /\nlarge receptive\nfield ... Ruffini’s corpuscle: “A skin\nstretch”. Used f... 
+
+[2 rows x 3 columns] </code></pre>
+<h4>Library Used</h4>
+        <p>LangChain – <code>PythonCodeTextSplitter</code>, pdfplumber, pandas</p>
+    </section>
+
+    <!-- Agentic Chunking -->
+    <section>
+        <h3>5. Agentic Chunking</h3>
+
+        <h4>Definition</h4>
+        <p>
+            Traditional chunking strategies (fixed-size, token-based, sentence-based) are syntactic. They operate on text length rather than meaning, which can result in: Splitting a single idea across multiple chunks, Merging unrelated ideas into one chunk,Reduced retrieval quality in RAG systems. Agentic chunking addresses this by delegating the chunking decision to an LLM, which can reason about semantic structure. 
+        </p>
+
+        <h4>Example Usage</h4>
+        <pre><code>from typing import List
+from pydantic import BaseModel, Field
+import os
+from dotenv import load_dotenv
+load_dotenv()
+from langchain_openai import ChatOpenAI
+from langchain_core.documents import Document
+from langchain_core.output_parsers import PydanticOutputParser
+class Chunk(BaseModel):
+    title: str = Field(description="Short descriptive title of the chunk")
+    content: str = Field(description="Exact text belonging to this chunk")
+class ChunkList(BaseModel):
+    chunks: List[Chunk]
+parser = PydanticOutputParser(pydantic_object=ChunkList)
+llm = ChatOpenAI(
+    model_name="mistralai/devstral-2512:free",
+    openai_api_base="https://openrouter.ai/api/v1",
+    openai_api_key=os.getenv("OPENROUTER_API_KEY"),
+)
+def agentic_chunking(text: str) -> List[Document]:
+    prompt = f"""
+        You are an expert document chunking agent.
+        TASK:
+        Split the provided text into semantically coherent chunks.
+        RULES:
+        - Each chunk should represent ONE topic
+        - Keep original wording (no summarization)
+        - No overlapping content
+        {parser.get_format_instructions()}
+        TEXT:
+        {text}
+        """
+    response = llm.invoke(prompt)
+    parsed = parser.parse(response.content)
+    documents = []
+    for idx, chunk in enumerate(parsed.chunks, start=1):
+        documents.append(
+            Document(
+                page_content=chunk.content,
+                metadata={
+                    "chunk_id": idx,
+                    "title": chunk.title,
+                    "chunking_strategy": "agentic"
+                }
+            )
+        )
+    return documents
+if __name__ == "__main__":
+    text = """
+OSI stands for Open Systems Interconnection. Created by International Standards Organization (ISO),
+Was created as a framework and reference model to explain how different networking technologies work together and interact
+It is not a standard that networking protocols must follow,
+Each layer has specific functions it is responsible for
+All layers work together in the correct order to move data around a network
+Top to bottom –All People Seem To Need Data Processing
+Bottom to top –Please Do Not Throw Sausage Pizza Away
+"""
+    chunks = agentic_chunking(text)
+    print("\n========== AGENTIC CHUNKS ==========\n")
+    for doc in chunks:
+        print(f"Chunk ID : {doc.metadata['chunk_id']}")
+        print(f"Title    : {doc.metadata['title']}")
+        print("Content  :")
+        print(doc.page_content)
+        print("\n" + "-" * 50)</code></pre>
+
+        
+
+        <h4>Example Output</h4>
+        <pre><code># ========== AGENTIC CHUNKS ==========
+ 
+# Chunk ID : 1
+# Title    : Definition of OSI
+# Content  :
+# OSI stands for Open Systems Interconnection. Created by International Standards Organization (ISO),
+ 
+# --------------------------------------------------
+# Chunk ID : 2
+# Title    : Purpose of OSI
+# Content  :
+# Was created as a framework and reference model to explain how different networking technologies work together and interact
+ 
+# --------------------------------------------------
+# Chunk ID : 3
+# Title    : Nature of OSI
+# Content  :
+# It is not a standard that networking protocols must follow,
+ 
+# --------------------------------------------------
+# Chunk ID : 4
+# Title    : Layer Functions
+# Content  :
+# Each layer has specific functions it is responsible for
+ 
+# --------------------------------------------------
+# Chunk ID : 5
+# Title    : Layer Interaction
+# Content  :
+# All layers work together in the correct order to move data around a network
+ ......</code></pre>
+ <h4>Library Used</h4>
+        <p>LangChain, LLMs, Pydantic Output Parsers</p>
+    </section>
+    <section id="impact">
+        <h2>Impact of Chunking Strategies on RAG Answer Retrieval</h2>
+
+        <p>
+            While chunking strategies define how documents are segmented and stored in a vector database, their real impact becomes visible during retrieval and answer generation.
+        </p>
+
+        <p>
+            To understand how different chunking approaches influence RAG system behavior, we evaluate them using the same user question, same corpus, and same generation model, varying only the chunking strategy used during indexing.
+        </p>
+
+        <div class="pdf-link">
+            Source PDF: <a href="../input_pdfs/somatosensory.pdf" target="_blank">somatosensory.pdf</a>
+        </div>
+        <div class="question-box">QUESTION: What does the table describe?</div>
+
+        <div class="answers">
+
+            <div class="strategy">
+                <h4 class="strategy-heading">Fixed size chunking</h4>
+                <div class="answer-box">The table describes **tial details, such as a round surface**, based on lecture notes from Laszlo Zaborszky at Rutgers University. It also mentions that figure captions and other elements (like Figure 3) intrude into the table.</div>
+            </div>
+
+            <div class="strategy">
+                <h4 class="strategy-heading">Recursive chunking</h4>
+                <div class="answer-box">The table describes a schematic, a chapter, and captions.</div>
+            </div>
+
+            <div class="strategy">
+                <h4 class="strategy-heading">Semantic chunking</h4>
+                <div class="answer-box">The table describes the types of mechanoreceptors in the skin, categorizing them as either rapidly adapting or slowly adapting, and indicating whether they are surface receptors with small receptive fields or deep receptors with large receptive fields.</div>
+            </div>
+
+            <div class="strategy">
+                <h4 class="strategy-heading">Agentic chunking</h4>
+                <div class="answer-box">The table describes four types of mechanoreceptors and their functions. It includes two rapidly adapting receptors (Hair receptor, Meissner’s corpuscle) and two slowly adapting receptors (Merkel’s receptor, Ruffini’s corpuscle). The table also distinguishes between surface receptors with small receptive fields and deep receptors with large receptive fields.</div>
+            </div>
+
+            <div class="strategy">
+                <h4 class="strategy-heading">Document based chunking</h4>
+                <div class="answer-box">The table describes the types of somatosensory receptors, categorizing them as either **rapidly adapting** or **slowly adapting**, and further classifying them based on their location (surface/deep) and receptive field size (small/large). It lists specific receptors (e.g., Meissner’s corpuscle, Merkel’s receptor, Pacinian corpuscle, Ruffini’s corpuscle) and their functions, such as detecting vibrations, spatial details, or skin stretch.</div>
+            </div>
+
+        </div>
+    </section>
+</div>
+
+</body>
+</html>
+    
+    
