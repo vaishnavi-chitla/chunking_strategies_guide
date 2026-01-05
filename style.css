@@ -1,0 +1,185 @@
+/* ---------- Global ---------- */
+body {
+    font-family: "Inter", "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #f0f4ff, #fdf2f8);
+    color: #1f2937;
+    margin: 0;
+    padding: 0;
+}
+
+/* ---------- Container ---------- */
+.container {
+    max-width: 1000px;
+    margin: 50px auto;
+    background: #ffffff;
+    padding: 50px;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Headings ---------- */
+h1 {
+    text-align: center;
+    font-size: 2.4rem;
+    background: linear-gradient(90deg, #6366f1, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 40px;
+}
+
+h2 {
+    margin-top: 50px;
+    color: #111827;
+    padding-bottom: 8px;
+    border-bottom: 3px solid #e0e7ff;
+}
+
+h3 {
+    color: #4338ca;
+    margin-bottom: 10px;
+}
+
+h4 {
+    margin-top: 18px;
+    color: #374151;
+    font-weight: 600;
+}
+
+/* ---------- Text ---------- */
+p {
+    line-height: 1.75;
+    color: #374151;
+}
+
+ul li {
+    margin-bottom: 8px;
+}
+
+/* ---------- Pipeline ---------- */
+.pipeline {
+    background: linear-gradient(135deg, #eef2ff, #fce7f3);
+    padding: 18px;
+    border-radius: 12px;
+    text-align: center;
+    font-weight: 600;
+    color: #1e3a8a;
+    margin: 25px 0;
+}
+
+/* ---------- Strategy Cards ---------- */
+section {
+    background: #f9fafb;
+    border-left: 6px solid #6366f1;
+    padding: 28px;
+    margin: 40px 0;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+section:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Code Blocks ---------- */
+pre {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #e5e7eb;
+    padding: 18px;
+    border-radius: 12px;
+    overflow-x: auto;
+    font-size: 14px;
+    margin-top: 12px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+code {
+    font-family: "JetBrains Mono", Consolas, monospace;
+}
+
+/* ---------- Output Blocks ---------- */
+pre:has(code):last-of-type {
+    background: linear-gradient(135deg, #022c22, #064e3b);
+    color: #d1fae5;
+}
+
+/* Explicit output class for outputs that aren't last-of-type */
+pre.output {
+    background: linear-gradient(135deg, #022c22, #064e3b);
+    color: #d1fae5;
+}
+
+/* ---------- Impact Section Styling ---------- */
+.question-box {
+    background: linear-gradient(180deg, #f0fdf4, #f6fffa);
+    border-left: 4px solid #10b981;
+    padding: 16px 18px;
+    border-radius: 8px;
+    color: #065f46;
+    font-weight: 700;
+    font-size: 1.15rem;
+    margin: 18px 0;
+}
+
+.answers .strategy-heading {
+    margin-top: 18px;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.answers p {
+    margin: 8px 0 14px 0;
+    color: #374151;
+}
+
+/* boxed answer */
+.answer-box {
+    background: #eff2f5;
+    border: 1px solid #e6f4ea;
+    padding: 12px 14px;
+    border-radius: 8px;
+    color: #0f172a;
+    margin: 8px 0 12px 0;
+}
+
+.strategy-footer {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-bottom: 14px;
+}
+
+/* PDF link */
+.pdf-link {
+    background: #f8fafc;
+    border: 1px dashed #c7f9dc;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin: 12px 0;
+}
+.pdf-link a {
+    color: #064e3b;
+    font-weight: 600;
+    text-decoration: none;
+}
+.pdf-link a:hover { text-decoration: underline; }
+
+/* ---------- Inline Code ---------- */
+p code {
+    background: #eef2ff;
+    color: #3730a3;
+    padding: 3px 6px;
+    border-radius: 6px;
+    font-size: 0.9em;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+    .container {
+        padding: 30px;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+}
