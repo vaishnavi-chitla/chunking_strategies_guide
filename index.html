@@ -313,112 +313,115 @@ for i, df in enumerate(extracted_dataframes):
 
         <h4>Definition</h4>
         <p>
-            Traditional chunking strategies (fixed-size, token-based, sentence-based) are syntactic. They operate on text length rather than meaning, which can result in: Splitting a single idea across multiple chunks, Merging unrelated ideas into one chunk,Reduced retrieval quality in RAG systems. Agentic chunking addresses this by delegating the chunking decision to an LLM, which can reason about semantic structure. 
+            Traditional chunking strategies (fixed-size, token-based, sentence-based) assume that clean, linear text is already available. In practice, many real-world documents contain scanned pages, images, tables, and complex layouts that cannot be reliably processed using standard Python-based text extraction libraries. These approaches operate purely on extracted text length rather than on visual or semantic understanding, often resulting in missing content, fragmented ideas, or poorly structured input for downstream RAG systems.
+        </p>
+        <p>
+            By leveraging Vision Language Models, documents can be interpreted in the same way a human reads them by jointly understanding visual structure, text, images, and tables. This produces a faithful, semantically rich textual representation of the document. Agentic chunking then builds on this high-quality extraction by delegating chunking decisions to an LLM, enabling reasoning over meaning and document structure rather than relying on rigid, syntactic boundaries.
         </p>
 
         <h4>Example Usage</h4>
-        <pre><code>from typing import List
-from pydantic import BaseModel, Field
-import os
-from dotenv import load_dotenv
+        <pre><code>from dotenv import load_dotenv
 load_dotenv()
-from langchain_openai import ChatOpenAI
-from langchain_core.documents import Document
-from langchain_core.output_parsers import PydanticOutputParser
-class Chunk(BaseModel):
-    title: str = Field(description="Short descriptive title of the chunk")
-    content: str = Field(description="Exact text belonging to this chunk")
-class ChunkList(BaseModel):
-    chunks: List[Chunk]
-parser = PydanticOutputParser(pydantic_object=ChunkList)
-llm = ChatOpenAI(
-    model_name="mistralai/devstral-2512:free",
-    openai_api_base="https://openrouter.ai/api/v1",
-    openai_api_key=os.getenv("OPENROUTER_API_KEY"),
+import pathlib
+from google import genai
+from google.genai import type
+pdf_path = "the-state-of-ai.pdf
+text_extraction_prompt = """You are an expert AI assistant, you are tasked with extracting the entire text from any PDF document. The document can be simple, complex, or even scanned, this shouldn't matter to you.
+You will be given the entire PDF as input. Start examining the document page by page, when you come across text, extract it as is don't convert it into another format like HTML or Markdown. If you come across images, replace them with a very detailed description of the image while taking into consideration the context around it.
+When you come across tables, describe them too like the image. The description should be very detailed and in a way that someone will understand the table without seeing it.
+Make sure to keep the structure of the document, if there are sections, subsections, bullet points, or numbered lists, make sure to keep them as is. If there are any headers, footers, page numbers, remove them.
+The final output should be a clean, well-structured text that represents the content of the entire PDF document as closely as possible to how a human would see it with their eyes when reading the document. Don't say anything else, just output the text you extracted from the PDF.
+Here is the PDF:
+""
+client = genai.Client()
+relative_path = "documents\\the-state-of-ai.pdf"
+file_path = pathlib.Path(relative_path)
+prompt = "Extract the text from the PDF please."
+response = client.models.generate_content(
+    model="gemini-3-flash-preview",
+    contents=[
+        system_prompt,
+        types.Part.from_bytes(
+            data=file_path.read_bytes(),
+            mime_type="application/pdf",
+        ),
+        prompt,
+    ],
+    config=types.GenerateContentConfig(max_output_tokens=32_768),
 )
-def agentic_chunking(text: str) -> List[Document]:
-    prompt = f"""
-        You are an expert document chunking agent.
-        TASK:
-        Split the provided text into semantically coherent chunks.
-        RULES:
-        - Each chunk should represent ONE topic
-        - Keep original wording (no summarization)
-        - No overlapping content
-        {parser.get_format_instructions()}
-        TEXT:
-        {text}
-        """
-    response = llm.invoke(prompt)
-    parsed = parser.parse(response.content)
-    documents = []
-    for idx, chunk in enumerate(parsed.chunks, start=1):
-        documents.append(
-            Document(
-                page_content=chunk.content,
-                metadata={
-                    "chunk_id": idx,
-                    "title": chunk.title,
-                    "chunking_strategy": "agentic"
-                }
-            )
-        )
-    return documents
-if __name__ == "__main__":
-    text = """
-OSI stands for Open Systems Interconnection. Created by International Standards Organization (ISO),
-Was created as a framework and reference model to explain how different networking technologies work together and interact
-It is not a standard that networking protocols must follow,
-Each layer has specific functions it is responsible for
-All layers work together in the correct order to move data around a network
-Top to bottom –All People Seem To Need Data Processing
-Bottom to top –Please Do Not Throw Sausage Pizza Away
-"""
-    chunks = agentic_chunking(text)
-    print("\n========== AGENTIC CHUNKS ==========\n")
-    for doc in chunks:
-        print(f"Chunk ID : {doc.metadata['chunk_id']}")
-        print(f"Title    : {doc.metadata['title']}")
-        print("Content  :")
-        print(doc.page_content)
-        print("\n" + "-" * 50)</code></pre>
+document_text = response.conten
+chunks_prompt = """
+## Task descriptio
+You are an expert at dividing document text into coherent chunks, where each chunk focuses on a single topic. 
+Chunks should be semantically complete — each must make sense on its own and not cut off sentences or important context. 
+The goal is to create topic-focused text segments that can later be used to generate precise, self-contained questions
+You do not need to make the chunks small or fixed in size. 
+Instead, focus on grouping sentences that belong together logically — for example, a section describing one feature, a single FAQ group, or a subchapter of a manual
+### Important instructions:
+- Do not paraphrase, summarize, or omit any content.
+- Do not drop any text. All extracted text must appear in some chunk.
+- Keep descriptions of figures, tables, or diagrams together with their corresponding text.
+- Ensure each chunk is self-contained and thematically focused.
+- Maintain the original formatting (lists, bullet points, bold text, etc.) as much as possible.
+- Output only the JSON array. No explanations or text outside of JSON
+Dividing text into focused chunks helps create high-quality datasets for evaluating embedding models. 
+Your expertise in this task will help ensure strong, semantically consistent results
+## Output forma
+Return your result as a JSON array of objects in this structure:
+[
+    {
+    "text_chunk": "The text chunk focusing on a single topic."
+    },
+    ...
+]
+        response = google_client.models.generate_content(
+    model="gemini-3-flash-preview",
+    contents=[
+        system_prompt,
+        extracted_text,
+    ],
+    config={
+        "response_mime_type": "application/json",
+        "response_schema": list[TextChunk],
+        "max_output_tokens": 65_536,
+    },
+)
+response_text = str(response.text)
+text_chunks_dict = [
+    {"id": i, "text_chunk": chunk.text_chunk}
+    for i, chunk in enumerate(text_chunks)
+]
+</code></pre>
 
-        
-
-        <h4>Example Output</h4>
-        <pre><code># ========== AGENTIC CHUNKS ==========
- 
-# Chunk ID : 1
-# Title    : Definition of OSI
-# Content  :
-# OSI stands for Open Systems Interconnection. Created by International Standards Organization (ISO),
- 
-# --------------------------------------------------
-# Chunk ID : 2
-# Title    : Purpose of OSI
-# Content  :
-# Was created as a framework and reference model to explain how different networking technologies work together and interact
- 
-# --------------------------------------------------
-# Chunk ID : 3
-# Title    : Nature of OSI
-# Content  :
-# It is not a standard that networking protocols must follow,
- 
-# --------------------------------------------------
-# Chunk ID : 4
-# Title    : Layer Functions
-# Content  :
-# Each layer has specific functions it is responsible for
- 
-# --------------------------------------------------
-# Chunk ID : 5
-# Title    : Layer Interaction
-# Content  :
-# All layers work together in the correct order to move data around a network
- ......</code></pre>
- <h4>Library Used</h4>
-        <p>LangChain, LLMs, Pydantic Output Parsers</p>
+<h4>Example Output</h4>
+        <pre><code>[
+  {
+    "id": 0,
+    "text_chunk": "QuantumBlack AI by McKinsey\n\nThe state of AI\nHow organizations are rewiring to capture value\n\nAlex Singla \nAlexander Sukharevsky \nLareina Yee \nMichael Chui\nBryce Hall\n\nMarch 2025\n\n[Image Description: An abstract, futuristic digital artwork dominates the background. It features slender, translucent blue and violet fibrous structures that resemble stylized plants or neurons. These fibers swirl from the bottom right towards the top left against a bright, hazy light blue background, suggesting connectivity and organic growth within a technological context.]\n\nOrganizations are beginning to create the structures and processes that lead to meaningful value from gen AI. While still in early days, companies are redesigning workflows, elevating governance, and mitigating more risks."
+  },
+  {
+    "id": 1,
+    "text_chunk": "Organizations are starting to make organizational changes designed to generate future value from gen AI, and large companies are leading the way. The latest McKinsey Global Survey on AI finds that organizations are beginning to take steps that drive bottom-line impact\u2014for example, redesigning workflows as they deploy gen AI and putting senior leaders in critical roles, such as overseeing AI governance. The findings also show that organizations are working to mitigate a growing set of gen-AI-related risks and are hiring for new AI-related roles while they retrain employees to participate in AI deployment. Companies with at least $500 million in annual revenue are changing more quickly than smaller organizations. Overall, the use of AI\u2014that is, gen AI as well as analytical AI\u2014continues to build momentum: More than three-quarters of respondents now say that their organizations use AI in at least one business function. The use of gen AI in particular is rapidly increasing.\n\nHow companies are organizing their gen AI deployment\u2014and who\u2019s in charge \n\nOur survey analyses show that a CEO\u2019s oversight of AI governance\u2014that is, the policies, processes, and technology necessary to develop and deploy AI systems responsibly\u2014is one element most correlated with higher self-reported bottom-line impact from an organization\u2019s gen AI use.1 That\u2019s particularly true at larger companies, where CEO oversight is the element with the most impact on EBIT attributable to gen AI. Twenty-eight percent of respondents whose organizations use AI report that their CEO is responsible for overseeing AI governance, though the share is smaller at larger organizations with $500 million or more in annual revenues, and 17 percent say AI governance is overseen by their board of directors. In many cases, AI governance is jointly owned: On average, respondents report that two leaders are in charge. \n\nThe value of AI comes from rewiring how companies run, and the latest survey shows that, out of 25 attributes tested for organizations of all sizes, the redesign of workflows has the biggest effect on an organization\u2019s ability to see EBIT impact from its use of gen AI. Organizations are beginning to reshape their workflows as they deploy gen AI. Twenty-one percent of respondents reporting gen AI use by their organizations say their organizations have fundamentally redesigned at least some workflows. \n\nTwenty-eight percent of respondents whose organizations use AI report that their CEO is responsible for overseeing AI governance.\n\n1 The correlation analyses considered 25 attributes and the reported effect of gen AI use on organizations\u2019 EBIT, and using the Johnson\u2019s Relative Weights regression analysis yielded an R-squared of 0.20. The attributes included which leaders oversee AI governance at organizations, how organizations are managing the time saved by gen AI deployment (for example, assigning completely new activities and fewer hours to employees, reducing head count), whether organizations have fundamentally redesigned at least some workflows as a result of gen AI deployment, and whether they have adopted each of 12 gen AI adoption and scaling best practices: 1) establishing a dedicated team to drive gen AI adoption; 2) having regular internal communications about the value created; 3) having senior leaders who are actively engaged; 4) embedding gen AI solutions into business processes effectively; 5) establishing role-based capability training; 6) creating a comprehensive approach to foster trust among employees; 7) having a mechanism to incorporate feedback; 8) establishing a clearly defined road map; 9) establishing a compelling change story; 10) tracking well-defined KPIs; 11) establishing employee incentives; and 12) creating a comprehensive approach to foster trust among customers.\n\nTwenty-one percent of respondents reporting gen AI use by their organizations say their organizations have fundamentally redesigned at least some workflows."
+  },
+  {
+    "id": 2,
+    "text_chunk": "McKinsey commentary\nAlexander Sukharevsky\nSenior partner and global coleader of QuantumBlack, AI by McKinsey\n\n[Image Description: A headshot of Alexander Sukharevsky, a man with short brown hair and a light beard, wearing a white shirt and dark jacket.]\n\nThe more we see organizations using AI, the more we recognize that it takes a top down process to really move the needle. Effective AI implementation starts with a fully committed C-suite and, ideally, an engaged board. Many companies\u2019 instinct is to delegate implementation to the IT or digital department, but over and over again, this turns out to be a recipe for failure.\n\nThere are several reasons for this. The first is that getting real value out of AI requires transformation, not just new technology. It\u2019s a question of successful change management and mobilization, which is why C-suite leadership is essential. It\u2019s also a potentially expensive transformation, requiring intensive use of sometimes scarce resources and talent. A lot rides on how those resources are made available, and that\u2019s an executive-level call requiring nuanced decision-making that reflects the balance organizations must strike between efficient resource use and broad empowerment\u2014a balance that must be constantly reevaluated as the technology and organization evolve.\n\nAs organizations become more fluent with AI, it will essentially become embedded in all functions, leaving leadership to focus on higher-level tasks like impact monitoring and talent development rather than on implementation."
+  },
+  {
+    "id": 3,
+    "text_chunk": "Organizations are selectively centralizing elements of their AI deployment \n\nThe survey findings also shed light on how organizations are structuring their AI deployment efforts. Some essential elements for deploying AI tend to be fully or partially centralized (Exhibit 1). For risk and compliance, as well as data governance, organizations often use a fully centralized model such as a center of excellence. For tech talent and adoption of AI solutions, on the other hand, respondents most often report using a hybrid or partially centralized model, with some resources handled centrally and others distributed across functions or business units\u2014though respondents at organizations with less than $500 million in annual revenues are more likely than others to report fully centralizing these elements. \n\nExhibit 1: Risk and data governance are two of the most centralized elements of deploying AI solutions, whereas tech talent is often hybrid.\n\n[Table Description: This stacked bar chart shows the degree of centralization for various AI deployment elements among respondents. The y-axis represents the percentage of respondents. The x-axis lists six elements, ranging from more centralized to more decentralized. Each bar is divided into three colors: dark blue for \"Fully centralized,\" gray for \"Hybrid,\" and light blue for \"Fully distributed.\"\n\n1. Risk and compliance: 57% Fully centralized, 30% Hybrid, 13% Fully distributed.\n2. Data governance for AI: 46% Fully centralized, 39% Hybrid, 15% Fully distributed.\n3. AI strategy: 36% Fully centralized, 48% Hybrid, 16% Fully distributed.\n4. Road map for AI-enhanced or AI-focused products: 35% Fully centralized, 44% Hybrid, 21% Fully distributed.\n5. Tech talent (e.g., data engineers and machine learning engineers): 29% Fully centralized, 49% Hybrid, 22% Fully distributed.\n6. Adoption of AI solutions (including changing processes, change management): 23% Fully centralized, 54% Hybrid, 23% Fully distributed.]"
+  },
+  {
+    "id": 4,
+    "text_chunk": "Organizations vary widely in how they monitor gen AI outputs \n\nOrganizations have employees overseeing the quality of gen AI outputs, though the extent of that oversight varies widely. Twenty-seven percent of respondents whose organizations use gen AI say that employees review all content created by gen AI before it is used\u2014for example, before a customer sees a chatbot\u2019s response or before an AI-generated image is used in marketing materials (Exhibit 2). A similar share says that 20 percent or less of gen AI-produced content is checked before use. Respondents working in business, legal, and other professional services are much more likely than those in other industries to say that all outputs are reviewed.\n\nTwenty-seven percent of respondents say employees at their organizations review all content created by gen AI before it is used, and a similar share says that 20 percent or less of gen AI-produced content is checked.\n\nExhibit 2: Respondents are about equally likely to say their organizations review all gen AI outputs as they are to say few are reviewed.\n\n[Table Description: A horizontal bar chart showing the \"Share of gen AI outputs reviewed before usage\" among respondents.\n- Up to 20%: 30% of respondents\n- 21 to 40%: 13% of respondents\n- 41 to 60%: 12% of respondents\n- 61 to 80%: 9% of respondents\n- 81 to 99%: 10% of respondents\n- 100%: 27% of respondents]"
+  },
+  {
+    "id": 5,
+    "text_chunk": "Organizations are addressing more gen-AI-related risks\n\nMany organizations are ramping up their efforts to mitigate gen-AI-related risks. Respondents are more likely than in early 2024 to say their organizations are actively managing risks related to inaccuracy, cybersecurity, and intellectual property infringement (Exhibit 3)\u2014three of the gen AI-related risks that respondents most commonly say have caused negative consequences for their organizations.2 \n\nExhibit 3: Respondents report increasing mitigation of inaccuracy, intellectual property infringement, and privacy risks related to use of gen AI.\n\n[Table Description: This exhibit consists of several small line graphs showing the percentage of respondents working to mitigate specific gen-AI-related risks over three time periods: April 2023, March 2024, and July 2024.\n- Inaccuracy: Shows a sharp increase, rising to over 40% in July 2024.\n- Cybersecurity: Remains high, fluctuating around the high 30s to low 40s.\n- Intellectual property infringement: Shows a steady upward trend, reaching approximately 35% in July 2024.\n- Regulatory compliance: Shows a slight dip then a recovery to around 30%.\n- Personal/individual privacy: Shows an upward trend, reaching approximately 30%.\n- Explainability: Remains relatively flat, around 20%.\n- Workforce/labor displacement: Shows a slight downward trend, ending near 15%.\n- Equity and fairness: Trends slightly downward to about 15%.\n- Organizational reputation: Trends upward to about 15%.\n- National security: Remains low, around 5%.\n- Physical safety: Remains low, around 5%.\n- Environmental impact: Remains low, around 5%.\n- Political stability: Remains very low.\n- None of the above: Shows an upward trend to about 15%.]\n\n2 The findings show little change since early 2024 in the share of respondents reporting negative consequences from gen AI use. Forty-seven percent say their organizations have experienced at least one consequence, compared with 44 percent in early 2024.\n\nRespondents at larger organizations report mitigating more risks than respondents from other organizations do. They are much more likely than others to say their organizations are managing potential cybersecurity and privacy risks, for example, but they are not any more likely to be addressing risks relating to the accuracy or explainability of AI outputs."
+  }
+  ...............</code></pre>
+    <h4>Library Used</h4>
+        <p>Google GenAI Python SDK</p>
     </section>
     <section id="impact">
         <h2>Impact of Chunking Strategies on RAG Answer Retrieval</h2>
@@ -432,7 +435,7 @@ Bottom to top –Please Do Not Throw Sausage Pizza Away
         </p>
 
         <div class="pdf-link">
-            Source PDF: <a href="somatosensory.pdf" target="_blank">somatosensory.pdf</a>
+            Source PDF: <a href="../input_pdfs/somatosensory.pdf" target="_blank">somatosensory.pdf</a>
         </div>
         <div class="question-box">QUESTION: What does the table describe?</div>
 
@@ -471,4 +474,3 @@ Bottom to top –Please Do Not Throw Sausage Pizza Away
 </html>
     
     
-
