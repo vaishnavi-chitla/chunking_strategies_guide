@@ -63,7 +63,7 @@ fetch('https://api.example.com/data')
     console.error('Failed to fetch data:', error);
     // handle error in UI, retry logic, etc.
   });
-            .then(function(response) {
+            // removed orphan .then() chain; ensure any .then() is chained to a Promise-returning expression
                 return response.json();
             });
     </script>
