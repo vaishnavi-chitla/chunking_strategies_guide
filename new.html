@@ -13,7 +13,13 @@
         var password = "admin1234";
 
         // Function with a logic error: divides without checking for zero
-        function calculateRatio(a, b) {
+function calculateRatio(a, b) {
+    if (typeof b !== 'number' || b === 0) {
+        // handle error gracefully: return null or throw a descriptive error
+        throw new Error('Invalid divisor: b must be a non-zero number');
+    }
+    return a / b;
+}
             return a / b;
         }
 
