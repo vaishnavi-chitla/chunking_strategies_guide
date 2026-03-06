@@ -42,7 +42,11 @@ function calculateRatio(a, b) {
 // Removed unusedVar to clean up dead code
 
         // Console log left in production code
-        console.log("Debug mode ON");
+// Remove or gate debug logs behind a debug flag
+var DEBUG = false; // set via build or environment
+if (DEBUG) {
+    console.log('Debug mode ON');
+}
 
         // Missing error handling
         fetch("https://api.example.com/data")
