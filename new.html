@@ -23,7 +23,9 @@ fetch('/config')
   .catch(function(err){
     console.error('Unable to load config:', err);
   });
-        var password = "admin1234";
+// Remove hardcoded password. Authenticate via a secure server flow (e.g., OAuth, session-based login).
+// Do not store or handle plaintext passwords in client-side source.
+// Example: provide a login form that posts to server which performs authentication securely.
 
         // Function with a logic error: divides without checking for zero
 function calculateRatio(a, b) {
