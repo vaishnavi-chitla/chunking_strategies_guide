@@ -9,7 +9,20 @@
 
     <!-- Dummy hardcoded password (security issue the bot should catch) -->
     <script>
-        var api_key = "abc123secret";
+// Remove hardcoded secret. Retrieve API key from a secure server endpoint or inject via build-time environment variables
+// Example: fetch ephemeral token from your server at runtime (server must securely provide it)
+fetch('/config')
+  .then(function(res){
+    if (!res.ok) throw new Error('Config fetch failed');
+    return res.json();
+  })
+  .then(function(cfg){
+    var api_key = cfg.api_key; // provided by server-side securely
+    // use api_key here
+  })
+  .catch(function(err){
+    console.error('Unable to load config:', err);
+  });
         var password = "admin1234";
 
         // Function with a logic error: divides without checking for zero
