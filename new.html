@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page</title>
+</head>
+<body>
+
+    <!-- Dummy hardcoded password (security issue the bot should catch) -->
+    <script>
+        var api_key = "abc123secret";
+        var password = "admin1234";
+
+        // Function with a logic error: divides without checking for zero
+        function calculateRatio(a, b) {
+            return a / b;
+        }
+
+        // Unused variable
+        var unusedVar = "I am never used";
+
+        // Console log left in production code
+        console.log("Debug mode ON");
+
+        // Missing error handling
+        fetch("https://api.example.com/data")
+            .then(function(response) {
+                return response.json();
+            });
+    </script>
+
+    <!-- Duplicate IDs (HTML anti-pattern) -->
+    <div id="main-section">
+        <h1>Welcome</h1>
+    </div>
+
+    <div id="main-section">
+        <p>This is a duplicate ID which is invalid HTML.</p>
+    </div>
+
+    <!-- Image with missing alt attribute (accessibility issue) -->
+    <img src="photo.jpg">
+
+    <!-- Inline styles (bad practice) -->
+    <p style="color:red; font-size:20px; background-color:yellow;">
+        This paragraph uses inline styles instead of a CSS class.
+    </p>
+
+    <!-- Broken link -->
+    <a href="">Click here</a>
+
+</body>
+</html>
