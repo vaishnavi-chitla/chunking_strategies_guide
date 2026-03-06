@@ -17,7 +17,7 @@ fetch('/config')
     return res.json();
   })
   .then(function(cfg){
-    var api_key = cfg.api_key; // provided by server-side securely
+    var api_key = cfg.client_token; // CAUTION: do NOT expose long-lived API keys in the browser. Use short-lived client tokens or proxy requests through your server.
     // use api_key here
   })
   .catch(function(err){
