@@ -1,106 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Page</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Page</title>
+
+<style>
+  .highlighted { 
+      color: red; 
+      font-size: 20px; 
+      background-color: yellow; 
+  }
+</style>
+
 </head>
 <body>
 
-    <!-- WARNING: Do NOT include hardcoded passwords or secrets in client-side code; fetch secrets from a secure server endpoint or inject via build-time environment variables -->
-    <script>
-// Remove hardcoded secret. Retrieve API key from a secure server endpoint or inject via build-time environment variables
-// Example: fetch ephemeral token from your server at runtime (server must securely provide it)
-fetch('/config')
-  .then(function(res){
-    if (!res.ok) throw new Error('Config fetch failed');
-    return res.json();
-  })
-  .then(function(cfg){
-    var api_key = cfg.client_token; // CAUTION: do NOT expose long-lived API keys in the browser. Use short-lived client tokens or proxy requests through your server.
-    // use api_key here
-  })
-  .catch(function(err){
-    console.error('Unable to load config:', err);
-  });
-// Remove hardcoded password. Authenticate via a secure server flow (e.g., OAuth, session-based login).
-// Do not store or handle plaintext passwords in client-side source.
-// Example: provide a login form that posts to server which performs authentication securely.
-
-        // Function with a logic error: divides without checking for zero
-function calculateRatio(a, b) {
-    if (typeof b !== 'number' || b === 0) {
-        // handle error gracefully: return null or throw a descriptive error
-        throw new Error('Invalid divisor: b must be a non-zero number');
-    }
-    return a / b;
-}
-            // removed stray 'return a / b;' outside function scope to avoid syntax error
-        }
-
-        // Unused variable
-// Removed unusedVar to clean up dead code
-
-        // Console log left in production code
-// Remove or gate debug logs behind a debug flag
-var DEBUG = false; // set via build or environment
-if (DEBUG) {
-    console.log('Debug mode ON');
-}
-
-        // Missing error handling
-fetch('https://api.example.com/data')
-  .then(function(response) {
-    if (!response.ok) {
-      throw new Error('Network response was not ok: ' + response.status);
-    }
-    return response.json();
-  })
-  .then(function(data) {
-    // process data
-  })
-  .catch(function(error) {
-    console.error('Failed to fetch data:', error);
-    // handle error in UI, retry logic, etc.
-  });
-            // removed orphan .then() chain; ensure any .then() is chained to a Promise-returning expression
-                return response.json();
-            });
-    </script>
-
-    <!-- Duplicate IDs (HTML anti-pattern) -->
 <div id="main-section">
     <h1>Welcome</h1>
 </div>
 
 <div id="secondary-section">
-    <p>This is a duplicate ID which is invalid HTML.</p>
+    <p>This section exists for testing.</p>
 </div>
-        <!-- duplicate heading removed -->
-    </div>
 
-    <div id="main-section-2">
-        <p>This is a duplicate ID which is invalid HTML.</p>
-    </div>
-
-    <!-- Image with missing alt attribute (accessibility issue) -->
-<img src="photo.jpg" alt="Descriptive text of the photo">
-
-    <!-- Inline styles (bad practice) -->
-<!-- Add a CSS class instead of inline styles -->
-<style>
-  .highlighted { color: red; font-size: 20px; background-color: yellow; }
-</style>
+<img src="photo.jpg" alt="Sample image">
 
 <p class="highlighted">
-    This paragraph uses a CSS class instead of inline styles.
+    This paragraph uses a CSS class.
 </p>
-        <!-- removed stray inline-styles text; use class-based styling instead -->
-    <!-- removed stray closing </p> -->
 
-    <!-- Broken link -->
 <a href="/target-page">Click here</a>
-<!-- or if it's a placeholder: <a href="#" role="button" aria-disabled="true">Click here</a> -->
+
+<script>
+
+// GLOBAL variable misuse
+var total = 0;
+
+// Inefficient loop (performance issue)
+function sumNumbers(arr){
+    for(var i = 0; i < arr.length; i++){
+        for(var j = 0; j < arr.length; j++){   // unnecessary nested loop
+            total += arr[i];
+        }
+    }
+    return total;
+}
+
+// Logic mistake: incorrect average calculation
+function calculateAverage(numbers){
+    let sum = numbers.reduce((a,b)=>a+b,0);
+    return sum / (numbers.length - 1);  // wrong divisor
+}
+
+// Weak input validation
+function calculateRatio(a,b){
+    if(!b){
+        console.log("Invalid divisor");
+        return 0;   // silently returning wrong value instead of proper handling
+    }
+    return a/b;
+}
+
+// Unnecessary DOM queries
+function changeTitle(){
+    var el = document.getElementById("main-section");
+    document.getElementById("main-section").innerText = "Hello User";
+}
+
+// Async mistake (missing await)
+async function loadData(){
+    let data = fetch("https://api.example.com/data");
+    console.log(data); // logs promise instead of response
+}
+
+// Debug log left in production
+console.log("Page loaded");
+
+// Memory leak pattern (interval never cleared)
+setInterval(function(){
+    console.log("Running background task");
+},1000);
+
+// Event listener added repeatedly (bad practice)
+document.body.addEventListener("click", function(){
+    document.getElementById("secondary-section").style.color = "blue";
+});
+
+</script>
 
 </body>
 </html>
